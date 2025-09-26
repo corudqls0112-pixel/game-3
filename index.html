@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>성경 카드 게임 + 자물쇠 + 보상</title>
+<title>성경 카드 게임 + 자물쇠 + 제출 버튼</title>
 <style>
   body {
     display: flex;
@@ -24,32 +24,24 @@
   .card {
     width: 200px;
     height: 120px;
-    perspective: 1000px;
     cursor: grab;
-  }
-  .card-inner {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
+    border: 2px solid #1e90ff;
     border-radius: 10px;
-  }
-  .card.flipped .card-inner { transform: rotateY(180deg); }
-  .card-front, .card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 10px;
+    background-color: #fff;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
     padding: 10px;
-    backface-visibility: hidden;
+    user-select: none;
   }
-  .card-front { background: #1e90ff; color: white; }
-  .card-back { background: #fff; color: #333; transform: rotateY(180deg); border: 2px solid #1e90ff; }
-  #nextMessage { margin-top: 20px; font-size: 1.2rem; color: green; display: none; text-align: center; }
+  #submitBtn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+  #nextMessage { margin-top: 20px; font-size: 1.2rem; color: green; text-align: center; display: none; }
   #lockContainer { display: none; flex-direction: column; align-items: center; margin-top: 20px; }
   #lockContainer input { padding: 5px 10px; font-size: 1rem; width: 150px; margin-bottom: 10px; }
   #rewardMessage { display: none; margin-top: 20px; font-size: 1.2rem; color: blue; text-align: center; }
@@ -58,9 +50,10 @@
 <body>
 
 <h1 id="gameTitle">성경 카드 게임</h1>
-<p id="gameDesc">카드를 클릭하여 내용을 확인하고, 올바른 순서대로 정렬하세요.</p>
+<p id="gameDesc">카드를 원하는 순서로 드래그하여 나열하고 제출하세요.</p>
 
 <div class="card-container" id="cardContainer"></div>
+<button id="submitBtn">제출</button>
 
 <div id="nextMessage"></div>
 
@@ -78,7 +71,7 @@
 const games = [
   {
     title: "고린도전서 1:17 카드 게임",
-    description: "카드를 클릭하여 내용을 확인하고, 올바른 순서대로 정렬하세요.",
+    description: "카드를 원하는 순서로 드래그하여 나열하고 제출하세요.",
     cards: [
       "그리스도께서 나를 보내심은",
       "세례를 베풀게 하려 하심이 아니요",
@@ -89,7 +82,7 @@ const games = [
   },
   {
     title: "시편 133:1 카드 게임",
-    description: "카드를 클릭하여 내용을 확인하고, 올바른 순서대로 정렬하세요.",
+    description: "카드를 원하는 순서로 드래그하여 나열하고 제출하세요.",
     cards: [
       "보라 형제가 연합하여 동거함이",
       "얼마나 선하고",
@@ -105,6 +98,7 @@ const container = document.getElementById("cardContainer");
 const nextMessage = document.getElementById("nextMessage");
 const gameTitle = document.getElementById("gameTitle");
 const gameDesc = document.getElementById("gameDesc");
+const submitBtn = document.getElementById("submitBtn");
 const lockContainer = document.getElementById("lockContainer");
 const lockInput = document.getElementById("lockInput");
 const lockMessage = document.getElementById("lockMessage");
@@ -136,13 +130,7 @@ function createCards() {
     card.className = "card";
     card.draggable = true;
     card.dataset.index = index;
-    card.innerHTML = `
-      <div class="card-inner">
-        <div class="card-front">뒤집기</div>
-        <div class="card-back">${text}</div>
-      </div>
-    `;
-    card.addEventListener("click", () => card.classList.toggle("flipped"));
+    card.textContent = text;
     card.addEventListener('dragstart', dragStart);
     card.addEventListener('dragover', dragOver);
     card.addEventListener('drop', drop);
@@ -163,15 +151,13 @@ function drop(e) {
     const destIndex = nodes.indexOf(this);
     if (srcIndex < destIndex) container.insertBefore(dragSrcEl, this.nextSibling);
     else container.insertBefore(dragSrcEl, this);
-    checkOrder();
   }
 }
 function dragEnd(e) { this.style.opacity = '1'; }
 
-// === 순서 체크 ===
-function checkOrder() {
-  const currentOrder = Array.from(container.children)
-    .map(card => card.querySelector(".card-back").textContent);
+// === 제출 버튼 ===
+submitBtn.addEventListener('click', () => {
+  const currentOrder = Array.from(container.children).map(card => card.textContent);
   if (currentOrder.join() === correctOrder.join()) {
     nextMessage.style.display = 'block';
     nextMessage.textContent = "정답! 잠시 후 다음 게임으로 이동합니다...";
@@ -186,28 +172,15 @@ function checkOrder() {
         lockContainer.style.display = 'flex';
       }, 1000);
     }
-  } else if (currentOrder.length === correctOrder.length) {
-    nextMessage.style.display = 'none';
-    setTimeout(() => { alert("틀렸습니다! 카드가 다시 섞입니다."); createCards(); }, 500);
+  } else {
+    alert("틀렸습니다! 카드가 다시 섞입니다.");
+    createCards();
   }
-}
+});
 
 // === 자물쇠 확인 ===
 checkLockBtn.addEventListener('click', () => {
   if (lockInput.value === PASSWORD) {
     lockMessage.style.color = 'green';
     lockMessage.textContent = "정답! 자물쇠가 열렸습니다.";
-    rewardMessage.style.display = 'block';
-  } else {
-    lockMessage.style.color = 'red';
-    lockMessage.textContent = "틀렸습니다. 다시 시도하세요.";
-    rewardMessage.style.display = 'none';
-  }
-});
-
-// 초기 카드 생성
-createCards();
-</script>
-
-</body>
-</html>
+    rewardMessage.styl
