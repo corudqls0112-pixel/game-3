@@ -89,7 +89,7 @@
 // === 게임 데이터 정의 ===
 const games = [
   {
-    title: "고린도전서 1:17 카드 게임",
+    title: "말씀 이어붙이기 게임",
     description: "카드를 클릭하여 내용을 확인하고, 올바른 순서대로 정렬하세요.",
     cards: [
       "그리스도께서 나를 보내심은",
@@ -101,7 +101,7 @@ const games = [
     verse: "1:17" // 장:절 표시
   },
   {
-    title: "시편 133:1 카드 게임",
+    title: "말씀 이어붙이기 게임",
     description: "카드를 클릭하여 내용을 확인하고, 올바른 순서대로 정렬하세요.",
     cards: [
       "보라 형제가 연합하여 동거함이",
@@ -213,7 +213,7 @@ function checkOrder() {
     } else {
       // 마지막 게임 완료
       setTimeout(() => {
-        nextMessage.textContent = "축하합니다! 모든 카드를 맞추셨습니다.\n힌트: 지금까지 이어붙인 성경 구절 장과 절을 조합하면 비밀번호입니다.\n비밀번호 힌트: " + passwordHint;
+        nextMessage.textContent = "축하합니다! 모든 카드를 맞추셨습니다.\n힌트: 지금까지 이어붙인 성경 구절 장과 절을 조합하면 마지막 퍼즐 조각의 비밀번호입니다.\n비밀번호 힌트: " + ;
       }, 1000);
     }
   } else if (currentOrder.length === correctOrder.length) {
