@@ -38,7 +38,13 @@
     padding: 10px;
     user-select: none;
     box-sizing: border-box;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .dragging {
+    transform: scale(1.15);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    opacity: 0.8;
+    z-index: 1000;
   }
   #submitBtn, #hintBtn, #checkLock {
     padding: 10px 20px;
@@ -178,7 +184,7 @@ function addDragEvents(card) {
   card.addEventListener('touchmove', touchMove, {passive: false});
   card.addEventListener('touchend', touchEnd);
 }
-function dragStart(e) { dragSrcEl = this; this.style.opacity = '0.5'; }
+function dragStart(e) { dragSrcEl = this; this.classList.add('dragging'); }
 function dragOver(e) { e.preventDefault(); }
 function drop(e) {
   e.stopPropagation();
@@ -190,34 +196,29 @@ function drop(e) {
     else container.insertBefore(dragSrcEl, this);
   }
 }
-function dragEnd(e) { this.style.opacity = '1'; }
+function dragEnd(e) { this.classList.remove('dragging'); }
 
 // === 모바일 터치 스와이프 드래그 ===
-let touchStartY = 0;
-let touchStartX = 0;
 let touchCard = null;
-
 function touchStart(e) {
   e.preventDefault();
   touchCard = this;
-  touchCard.style.opacity = '0.5';
-  touchStartY = e.touches[0].clientY;
-  touchStartX = e.touches[0].clientX;
+  touchCard.classList.add('dragging');
 }
 function touchMove(e) {
   e.preventDefault();
-  const touchY = e.touches[0].clientY;
-  const touchX = e.touches[0].clientX;
+  const touch = e.touches[0];
   const nodes = Array.from(container.children).filter(c => c !== touchCard);
   nodes.forEach(node => {
     const rect = node.getBoundingClientRect();
-    if (touchY > rect.top && touchY < rect.bottom && touchX > rect.left && touchX < rect.right) {
+    if (touch.clientY > rect.top && touch.clientY < rect.bottom &&
+        touch.clientX > rect.left && touch.clientX < rect.right) {
       container.insertBefore(touchCard, node);
     }
   });
 }
 function touchEnd(e) {
-  if (touchCard) touchCard.style.opacity = '1';
+  if (touchCard) touchCard.classList.remove('dragging');
   touchCard = null;
 }
 
