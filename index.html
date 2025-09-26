@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>성경 카드 게임 + 자물쇠 + 제출 버튼</title>
+<title>성경 카드 게임 + 제출 + 자물쇠</title>
 <style>
   body {
     display: flex;
@@ -94,6 +94,7 @@ const games = [
 
 let currentGameIndex = 0;
 let correctOrder = [];
+let currentCards = []; // 현재 카드 요소
 const container = document.getElementById("cardContainer");
 const nextMessage = document.getElementById("nextMessage");
 const gameTitle = document.getElementById("gameTitle");
@@ -104,7 +105,7 @@ const lockInput = document.getElementById("lockInput");
 const lockMessage = document.getElementById("lockMessage");
 const checkLockBtn = document.getElementById("checkLock");
 const rewardMessage = document.getElementById("rewardMessage");
-const PASSWORD = "11731"; // 자물쇠 비밀번호
+const PASSWORD = "11731";
 
 // === 카드 생성 함수 ===
 function shuffleArray(array) {
@@ -116,7 +117,7 @@ function shuffleArray(array) {
 }
 
 function createCards() {
-  container.innerHTML = "";
+  container.innerHTML = ""; // 초기화
   nextMessage.style.display = 'none';
   const currentGame = games[currentGameIndex];
   gameTitle.textContent = currentGame.title;
@@ -124,23 +125,29 @@ function createCards() {
 
   correctOrder = [...currentGame.cards];
   const shuffledTexts = shuffleArray([...currentGame.cards]);
+  currentCards = [];
 
-  shuffledTexts.forEach((text, index) => {
+  shuffledTexts.forEach(text => {
     const card = document.createElement("div");
     card.className = "card";
     card.draggable = true;
-    card.dataset.index = index;
     card.textContent = text;
-    card.addEventListener('dragstart', dragStart);
-    card.addEventListener('dragover', dragOver);
-    card.addEventListener('drop', drop);
-    card.addEventListener('dragend', dragEnd);
+    addDragEvents(card);
     container.appendChild(card);
+    currentCards.push(card);
   });
 }
 
-// === 드래그 앤 드롭 ===
+// === 드래그 앤 드롭 함수 ===
 let dragSrcEl = null;
+
+function addDragEvents(card) {
+  card.addEventListener('dragstart', dragStart);
+  card.addEventListener('dragover', dragOver);
+  card.addEventListener('drop', drop);
+  card.addEventListener('dragend', dragEnd);
+}
+
 function dragStart(e) { dragSrcEl = this; this.style.opacity = '0.5'; }
 function dragOver(e) { e.preventDefault(); }
 function drop(e) {
@@ -174,7 +181,10 @@ submitBtn.addEventListener('click', () => {
     }
   } else {
     alert("틀렸습니다! 카드가 다시 섞입니다.");
-    createCards();
+    // 틀리면 카드 내용 유지하면서 재섞기
+    const texts = currentCards.map(c => c.textContent);
+    const shuffled = shuffleArray([...texts]);
+    currentCards.forEach((card, i) => card.textContent = shuffled[i]);
   }
 });
 
@@ -183,4 +193,17 @@ checkLockBtn.addEventListener('click', () => {
   if (lockInput.value === PASSWORD) {
     lockMessage.style.color = 'green';
     lockMessage.textContent = "정답! 자물쇠가 열렸습니다.";
-    rewardMessage.styl
+    rewardMessage.style.display = 'block';
+  } else {
+    lockMessage.style.color = 'red';
+    lockMessage.textContent = "틀렸습니다. 다시 시도하세요.";
+    rewardMessage.style.display = 'none';
+  }
+});
+
+// 초기 카드 생성
+createCards();
+</script>
+
+</body>
+</html>
