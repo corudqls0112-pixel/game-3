@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>성경 카드 게임 + 제출 + 자물쇠</title>
+<title>성경 카드 게임 + 제출 + 자물쇠 + 힌트</title>
 <style>
   body {
     display: flex;
@@ -12,17 +12,20 @@
     font-family: Arial, sans-serif;
     background: #f0f8ff;
     padding: 20px;
+    margin: 0;
   }
-  h1, p { text-align: center; }
+  h1, p { text-align: center; margin: 5px 0; }
   .card-container {
     display: flex;
-    gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
+    gap: 10px;
     margin-bottom: 20px;
   }
   .card {
-    width: 200px;
+    flex: 1 1 150px;
+    max-width: 220px;
+    min-width: 140px;
     height: 120px;
     cursor: grab;
     border: 2px solid #1e90ff;
@@ -34,17 +37,35 @@
     text-align: center;
     padding: 10px;
     user-select: none;
+    box-sizing: border-box;
+    transition: transform 0.2s;
   }
-  #submitBtn {
+  #submitBtn, #hintBtn, #checkLock {
     padding: 10px 20px;
     font-size: 1rem;
-    margin-bottom: 20px;
+    margin: 10px;
     cursor: pointer;
   }
   #nextMessage { margin-top: 20px; font-size: 1.2rem; color: green; text-align: center; display: none; }
   #lockContainer { display: none; flex-direction: column; align-items: center; margin-top: 20px; }
   #lockContainer input { padding: 5px 10px; font-size: 1rem; width: 150px; margin-bottom: 10px; }
+  #hintMessage {
+    color: #d2691e;
+    margin-bottom: 10px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+  }
   #rewardMessage { display: none; margin-top: 20px; font-size: 1.2rem; color: blue; text-align: center; }
+  @media (max-width: 600px) {
+    .card {
+      flex: 1 1 45%;
+      min-width: 120px;
+      height: 100px;
+      font-size: 0.9rem;
+    }
+  }
 </style>
 </head>
 <body>
@@ -60,7 +81,11 @@
 <div id="lockContainer">
   <p>모든 게임 완료! 자물쇠 비밀번호를 입력하세요.</p>
   <input type="text" id="lockInput" placeholder="비밀번호 입력">
-  <button id="checkLock">확인</button>
+  <div>
+    <button id="checkLock">확인</button>
+    <button id="hintBtn">힌트</button>
+  </div>
+  <p id="hintMessage">힌트: 지금까지 이어 붙인 성경 말씀의 장과 절이 비밀번호를 푸는 열쇠입니다.</p>
   <p id="lockMessage"></p>
 </div>
 
@@ -94,7 +119,7 @@ const games = [
 
 let currentGameIndex = 0;
 let correctOrder = [];
-let currentCards = []; // 현재 카드 요소
+let currentCards = [];
 const container = document.getElementById("cardContainer");
 const nextMessage = document.getElementById("nextMessage");
 const gameTitle = document.getElementById("gameTitle");
@@ -105,9 +130,11 @@ const lockInput = document.getElementById("lockInput");
 const lockMessage = document.getElementById("lockMessage");
 const checkLockBtn = document.getElementById("checkLock");
 const rewardMessage = document.getElementById("rewardMessage");
+const hintBtn = document.getElementById("hintBtn");
+const hintMessage = document.getElementById("hintMessage");
 const PASSWORD = "11731";
 
-// === 카드 생성 함수 ===
+// === 카드 생성 ===
 function shuffleArray(array) {
   for (let i = array.length -1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i +1));
@@ -117,7 +144,7 @@ function shuffleArray(array) {
 }
 
 function createCards() {
-  container.innerHTML = ""; // 초기화
+  container.innerHTML = "";
   nextMessage.style.display = 'none';
   const currentGame = games[currentGameIndex];
   gameTitle.textContent = currentGame.title;
@@ -138,16 +165,19 @@ function createCards() {
   });
 }
 
-// === 드래그 앤 드롭 함수 ===
+// === 드래그 ===
 let dragSrcEl = null;
-
 function addDragEvents(card) {
   card.addEventListener('dragstart', dragStart);
   card.addEventListener('dragover', dragOver);
   card.addEventListener('drop', drop);
   card.addEventListener('dragend', dragEnd);
-}
 
+  // 모바일 터치 드래그
+  card.addEventListener('touchstart', touchStart, {passive: false});
+  card.addEventListener('touchmove', touchMove, {passive: false});
+  card.addEventListener('touchend', touchEnd);
+}
 function dragStart(e) { dragSrcEl = this; this.style.opacity = '0.5'; }
 function dragOver(e) { e.preventDefault(); }
 function drop(e) {
@@ -162,6 +192,35 @@ function drop(e) {
 }
 function dragEnd(e) { this.style.opacity = '1'; }
 
+// === 모바일 터치 스와이프 드래그 ===
+let touchStartY = 0;
+let touchStartX = 0;
+let touchCard = null;
+
+function touchStart(e) {
+  e.preventDefault();
+  touchCard = this;
+  touchCard.style.opacity = '0.5';
+  touchStartY = e.touches[0].clientY;
+  touchStartX = e.touches[0].clientX;
+}
+function touchMove(e) {
+  e.preventDefault();
+  const touchY = e.touches[0].clientY;
+  const touchX = e.touches[0].clientX;
+  const nodes = Array.from(container.children).filter(c => c !== touchCard);
+  nodes.forEach(node => {
+    const rect = node.getBoundingClientRect();
+    if (touchY > rect.top && touchY < rect.bottom && touchX > rect.left && touchX < rect.right) {
+      container.insertBefore(touchCard, node);
+    }
+  });
+}
+function touchEnd(e) {
+  if (touchCard) touchCard.style.opacity = '1';
+  touchCard = null;
+}
+
 // === 제출 버튼 ===
 submitBtn.addEventListener('click', () => {
   const currentOrder = Array.from(container.children).map(card => card.textContent);
@@ -169,10 +228,7 @@ submitBtn.addEventListener('click', () => {
     nextMessage.style.display = 'block';
     nextMessage.textContent = "정답! 잠시 후 다음 게임으로 이동합니다...";
     if (currentGameIndex + 1 < games.length) {
-      setTimeout(() => {
-        currentGameIndex++;
-        createCards();
-      }, 1000);
+      setTimeout(() => { currentGameIndex++; createCards(); }, 1000);
     } else {
       setTimeout(() => {
         nextMessage.textContent = "축하합니다! 모든 카드를 맞추셨습니다. 이제 자물쇠를 여세요.";
@@ -181,7 +237,6 @@ submitBtn.addEventListener('click', () => {
     }
   } else {
     alert("틀렸습니다! 카드가 다시 섞입니다.");
-    // 틀리면 카드 내용 유지하면서 재섞기
     const texts = currentCards.map(c => c.textContent);
     const shuffled = shuffleArray([...texts]);
     currentCards.forEach((card, i) => card.textContent = shuffled[i]);
@@ -199,6 +254,12 @@ checkLockBtn.addEventListener('click', () => {
     lockMessage.textContent = "틀렸습니다. 다시 시도하세요.";
     rewardMessage.style.display = 'none';
   }
+});
+
+// === 힌트 버튼 ===
+hintBtn.addEventListener('click', () => {
+  hintMessage.style.opacity = '1';
+  setTimeout(() => { hintMessage.style.opacity = '0'; }, 3000);
 });
 
 // 초기 카드 생성
